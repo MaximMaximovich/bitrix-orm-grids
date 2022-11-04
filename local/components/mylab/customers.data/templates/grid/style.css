@@ -1,0 +1,11 @@
+@import url('/bitrix/js/ui/buttons/icons/ui.buttons.icons.css');
+
+.transport-action-bar {
+    margin-top: 18px;
+    margin-bottom: 18px;
+    float: right;
+}
+
+.main-ui-filter-search {
+    min-width: 80% !important;
+}

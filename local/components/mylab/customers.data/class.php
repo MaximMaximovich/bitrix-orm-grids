@@ -51,7 +51,13 @@ class CustomersDataComponent extends CBitrixComponent
             }
 
 
-            if ($this->templateName == '' || $this->templateName == '.default') {
+            if ($this->templateName == 'grid') {
+                if (!empty($this->columnFields) && !empty($this->ormClassName)) {
+
+                    $this->showByGrid();
+
+                }
+            } else if ($this->templateName == '' || $this->templateName == '.default') {
 
                 if (!empty($this->columnFields) && !empty($this->ormClassName)) {
 
@@ -152,10 +158,10 @@ class CustomersDataComponent extends CBitrixComponent
                         $mapRefObjects = $ormRefClassName::getMap();
                         foreach ($mapRefObjects as $mapRefObject) {
                             if ($mapRefObject->getName() == $pieces[1]) {
-                                $arr['id'] = $ormRefClassName . '_' . $pieces[1] . '_ALIAS';
+                                $arr['id'] = $pieces[0] . '_' . $pieces[1] . '_ALIAS';
                                 $arr['name'] = $mapRefObject->getTitle();
                                 $arr['default'] = true;
-                                $arr['sort'] = $ormRefClassName . '_' . $pieces[1] . '_ALIAS';
+                                $arr['sort'] = $pieces[0] . '_' . $pieces[1] . '_ALIAS';
                                 array_push($gridHead, $arr);
                             }
                         }
@@ -176,5 +182,98 @@ class CustomersDataComponent extends CBitrixComponent
             }
         }
         return $gridHead;
+    }
+
+    /**
+     * Отображение через грид
+     */
+    public function showByGrid(): void
+    {
+        $this->arResult['GRID_ID'] = $this->getGridId();
+        $this->arResult['GRID_BODY'] = $this->getGridBody();
+        $this->arResult['GRID_HEAD'] = $this->getGridHead();
+    }
+
+    /**
+     * Возвращает идентификатор грида.
+     *
+     * @return string
+     */
+    private function getGridId(): string
+    {
+        $listId = "template_id";
+
+        if (!empty($this->listId)) {
+            $listId = $this->listId;
+        }
+
+        return 'mylab_customers_' . $listId;
+    }
+
+    /**
+     * Возвращает содержимое (тело) таблицы.
+     *
+     * @return array
+     */
+    private function getGridBody(): array
+    {
+        $arBody = [];
+
+        $arItems = $this->getElements();
+
+        foreach ($arItems as $arItem) {
+            $arGridElement = [];
+
+            foreach ($this->columnFields as $columnField) {
+                if (strpos($columnField, '.') != null) {
+                    $pieces = explode(".", $columnField);
+                    $aliasName = $pieces[0] . '_' . $pieces[1] . '_ALIAS';
+                    $arGridElement['data'][$aliasName] = $arItem[$aliasName];
+
+                } else {
+                    $arGridElement['data'][$columnField] = $arItem[$columnField];
+                }
+            }
+
+            $arBody[] = $arGridElement;
+        }
+
+        return $arBody;
+    }
+
+
+    /**
+     * Получение элементов через ORM для шаблона grid
+     *
+     * @return array
+     */
+    public function getElements(): array
+    {
+        $result = [];
+
+        if (empty($this->columnFields))
+            return [];
+
+            $columnFields = [];
+
+            foreach ($this->columnFields as $columnField) {
+                    if (strpos($columnField, '.') != null) {
+                        $pieces = explode(".", $columnField);
+                        $aliasName = $pieces[0] . '_' . $pieces[1] . '_ALIAS';
+                        $columnFields[$aliasName] = $columnField;
+                    } else {
+                        $columnFields[] = $columnField;
+                    }
+            }
+
+            $ormNam = $this->ormClassName;
+
+            $elements = $ormNam::GetList([
+              'select' => $columnFields,
+            ]);
+
+            $result = $elements->fetchAll();
+
+        return $result;
     }
 }

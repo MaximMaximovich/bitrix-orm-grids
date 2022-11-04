@@ -10,21 +10,21 @@ use Bitrix\Main\Localization\Loc;
 
 <? if (!$arResult['IS_MODULE_LOAD']) : ?>
 
-    <?= Loc::getMessage('YLAB_MEETING_LIST_TABLE_DEFAULT_TEMPLATE_ERROR1') ?>
+    <?= Loc::getMessage('MYLAB_CUSTOMERS_DATA_TABLE_DEFAULT_TEMPLATE_ERROR1') ?>
     <?= '<br>' ?>
 
 <? else: ?>
 
     <? if (empty($arParams['ORM_NAME'])) : ?>
-        <?= Loc::getMessage('YLAB_MEETING_LIST_TABLE_DEFAULT_TEMPLATE_ERROR2') ?>
+        <?= Loc::getMessage('MYLAB_CUSTOMERS_DATA_TABLE_DEFAULT_TEMPLATE_ERROR2') ?>
         <?= '<br>' ?>
     <? endif; ?>
     <? if (!is_array($arParams['COLUMN_FIELDS'])) : ?>
-        <?= Loc::getMessage('YLAB_MEETING_LIST_TABLE_DEFAULT_TEMPLATE_ERROR3') ?>
+        <?= Loc::getMessage('MYLAB_CUSTOMERS_DATA_TABLE_DEFAULT_TEMPLATE_ERROR3') ?>
         <?= '<br>' ?>
     <? endif; ?>
     <? if (empty($arParams['COLUMN_FIELDS'])) : ?>
-        <?= Loc::getMessage('YLAB_MEETING_LIST_TABLE_DEFAULT_TEMPLATE_ERROR4') ?>
+        <?= Loc::getMessage('MYLAB_CUSTOMERS_DATA_TABLE_DEFAULT_TEMPLATE_ERROR4') ?>
         <?= '<br>' ?>
     <? endif; ?>
 
@@ -32,7 +32,7 @@ use Bitrix\Main\Localization\Loc;
       && !empty($arParams['COLUMN_FIELDS'])) : ?>
         <div class="">
 
-            <h3><?= Loc::getMessage('YLAB_MEETING_LIST_TABLE_DEFAULT_TEMPLATE_PREFIX') ?> <?= $arResult['GRID']['TABLE_NAME'] ?></h3>
+            <h3><?= Loc::getMessage('MYLAB_CUSTOMERS_DATA_TABLE_DEFAULT_TEMPLATE_PREFIX') ?> <?= $arResult['GRID']['TABLE_NAME'] ?></h3>
             <p></p>
 
             <table border="1" width="100%" cellpadding="5">
