@@ -1,0 +1,3 @@
+<?php
+
+$MESS['MYLAB_CUSTOMER_AUTHOR_NAME'] = 'Max';

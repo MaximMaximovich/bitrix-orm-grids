@@ -1,0 +1,63 @@
+/*
+/*/
+
+#
+# EDITORS
+#
+.tmproj
+*.esproj
+*.sublime-workspace
+*.sublime-project
+.idea
+.vscode
+*.bak
+*.sym
+.c9revisions
+.c9
+.project
+.buildlog
+_notes
+dwsync.xml
+.settings
+nbactions.xml
+nb-configuration.xml
+.cache
+*.komodoproject
+.komodotools
+
+#
+# OS-SPECIFIC
+#
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*~
+.directory
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+.swp
+
+# File And Folders to ignore
+node_modules/
+bower_components
+package-lock.json
+*.txt
+*.log
+
+#composer venor files
+/local/composer/vendor/
+/local/composer/composer.lock
+
+!.gitignore
+!/local/
+!README.md
