@@ -4,6 +4,7 @@ use Bitrix\Main\Loader;
 use Bitrix\Main\ORM;
 use Bitrix\Main\UI\PageNavigation;
 use Bitrix\Main\Grid\Options as GridOptions;
+use Bitrix\Main\UI\Filter\Options as FilterOptions;
 
 
 /**
@@ -24,6 +25,8 @@ class CustomersDataComponent extends CBitrixComponent
     private array $columnFields;
     /** @var ?PageNavigation $gridNav Параметры навигации грида */
     private ?PageNavigation $gridNav = null;
+    /** @var array $filterFields Набор полей доступных для фильтрации */
+    private array $filterFields;
 
     /**
      * Метод executeComponent
@@ -53,7 +56,9 @@ class CustomersDataComponent extends CBitrixComponent
             if (is_array($this->arParams['COLUMN_FIELDS'])) {
                 $this->columnFields = $this->arParams['COLUMN_FIELDS'];
             }
-
+            if (is_array($this->arParams['FILTER_FIELDS'])) {
+                $this->filterFields = $this->arParams['FILTER_FIELDS'];
+            }
 
             if ($this->templateName == 'grid') {
                 if (!empty($this->columnFields) && !empty($this->ormClassName)) {
@@ -164,6 +169,7 @@ class CustomersDataComponent extends CBitrixComponent
                             if ($mapRefObject->getName() == $pieces[1]) {
                                 $arr['id'] = $pieces[0] . '_' . $pieces[1] . '_ALIAS';
                                 $arr['name'] = $mapRefObject->getTitle();
+                                $arr['type'] = $this->gridFilterDataType($mapObject->getDataType());
                                 $arr['default'] = true;
                                 $arr['sort'] = $pieces[0] . '_' . $pieces[1] . '_ALIAS';
                                 array_push($gridHead, $arr);
@@ -178,6 +184,7 @@ class CustomersDataComponent extends CBitrixComponent
                     if (($fieldTypes[4] != 'Relations') && ($mapObject->getName() == $columnField)) {
                         $arr['id'] = $mapObject->getName();
                         $arr['name'] = $mapObject->getTitle();
+                        $arr['type'] = $this->gridFilterDataType($mapObject->getDataType());
                         $arr['default'] = true;
                         $arr['sort'] = $mapObject->getName();
                         array_push($gridHead, $arr);
@@ -186,6 +193,27 @@ class CustomersDataComponent extends CBitrixComponent
             }
         }
         return $gridHead;
+    }
+
+    /**
+     * Возвращает тип поля для фильтрации.
+     *
+     * @param string $dataType
+     * @return string
+     */
+    private
+    function gridFilterDataType(string $dataType): string
+    {
+
+        if ($dataType == 'integer' || $dataType == 'float') {
+            $gridFilterDataType = 'number';
+        } else if ($dataType == 'data' || $dataType == 'datetime') {
+            $gridFilterDataType = 'data';
+        } else {
+            $gridFilterDataType = 'string';
+        }
+
+        return $gridFilterDataType;
     }
 
     /**
@@ -198,6 +226,7 @@ class CustomersDataComponent extends CBitrixComponent
         $this->arResult['GRID_HEAD'] = $this->getGridHead();
         $this->arResult['GRID_NAV'] = $this->getGridNav();
         $this->arResult['RECORD_COUNT'] = $this->getGridNav()->getRecordCount();
+        $this->arResult['GRID_FILTER'] = $this->getGridFilterParams();
     }
 
     /**
@@ -274,10 +303,15 @@ class CustomersDataComponent extends CBitrixComponent
 
         $ormName = $this->ormClassName;
 
+        $arCurSort = $this->getObGridParams()->getSorting(['sort' => ['ID' => 'DESC']])['sort'];
+        $arFilter = $this->getGridFilterValues();
+
         $elements = $ormName::GetList([
+          'filter' => $arFilter,
           "count_total" => true,
           "offset" => $this->getGridNav()->getOffset(),
           "limit" => $this->getGridNav()->getLimit(),
+          'order' => $arCurSort,
           'select' => $columnFields,
         ]);
 
@@ -321,5 +355,118 @@ class CustomersDataComponent extends CBitrixComponent
     {
         return $this->gridOption ?? $this->gridOption = new GridOptions($this->getGridId());
 
+    }
+
+    /**
+     * Возвращает настройки отображения грид фильтра.
+     *
+     * @return array
+     */
+    private
+    function getGridFilterParams(): array
+    {
+
+        // Массив параметров фильтра
+        $getGridFilterParams = [];
+
+        if (!empty($this->filterFields)) {
+
+            $filterFields = [];
+
+            foreach ($this->filterFields as $filterField) {
+                if (!empty($filterField)) {
+                    if (strpos($filterField, '.') != null) {
+                        $pieces = explode(".", $filterField);
+                        $aliasName = $pieces[0] . '_' . $pieces[1] . '_ALIAS';
+                        $filterFields[] = $aliasName;
+                    } else {
+                        $filterFields[] = $filterField;
+                    }
+                }
+            }
+
+            foreach ($this->getGridHead() as $GridHeadElement) {
+
+                $arr = [];
+
+                if (in_array($GridHeadElement['id'], $filterFields)) {
+                    $arr['id'] = $GridHeadElement['id'];
+                    $arr['name'] = $GridHeadElement['name'];
+                    $arr['type'] = $GridHeadElement['type'];
+                } else {
+                    continue;
+                }
+
+                array_push($getGridFilterParams, $arr);
+            }
+
+        }
+
+        return $getGridFilterParams;
+    }
+
+    /**
+     * Возвращает значения грид фильтра.
+     *
+     * @return array
+     */
+    public
+    function getGridFilterValues(): array
+    {
+
+        $obFilterOption = new FilterOptions($this->getGridId());
+        $arFilterData = $obFilterOption->getFilter();
+        $baseFilter = array_intersect_key($arFilterData, array_flip($obFilterOption->getUsedFields()));
+        $formatedFilter = $this->prepareFilter($arFilterData, $baseFilter);
+
+        return array_merge(
+          $baseFilter,
+          $formatedFilter
+        );
+    }
+
+    /**
+     * Подготавливает параметры фильтра
+     *
+     * @param array $arFilterData
+     * @param array $baseFilter
+     * @return array
+     */
+    public
+    function prepareFilter(array $arFilterData, &$baseFilter = []): array
+    {
+        $arFilter = [];
+
+
+        foreach ($this->getGridFilterParams() as $gridFilterParam) {
+
+            if ($gridFilterParam['type'] == 'number') {
+
+                if (!empty($arFilterData[$gridFilterParam['id'] . '_from'])) {
+                    $arFilter['>=' . $gridFilterParam['id']] = (int)$arFilterData[$gridFilterParam['id'] . '_from'];
+                }
+                if (!empty($arFilterData[$gridFilterParam['id'] . '_to'])) {
+                    $arFilter['<=' . $gridFilterParam['id']] = (int)$arFilterData[$gridFilterParam['id'] . '_to'];
+                }
+            }
+
+            if ($gridFilterParam['type'] == 'data') {
+
+                if (!empty($arFilterData[$gridFilterParam['id'] . '_from'])) {
+                    $arFilter['>=' . $gridFilterParam['id']] = date(
+                      "Y-m-d H:i:s",
+                      strtotime($arFilterData[$gridFilterParam['id'] . '_from']));
+                }
+                if (!empty($arFilterData[$gridFilterParam['id'] . '_to'])) {
+                    $arFilter['<=' . $gridFilterParam['id']] = date(
+                      "Y-m-d H:i:s",
+                      strtotime($arFilterData[$gridFilterParam['id'] . '_to']));
+                }
+
+            }
+
+        }
+
+        return $arFilter;
     }
 }

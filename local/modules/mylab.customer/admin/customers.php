@@ -15,11 +15,15 @@ $APPLICATION->IncludeComponent(
       "ADDRESSES.CITY",
       "ADDRESSES.COUNTRY",
     ),
-//    "FILTER_FIELDS" => array(
-//      0 => "ID",
-//      1 => "NAME",
-//      2 => "ACTIVITY",
-//    ),
+    "FILTER_FIELDS" => array(
+      "ID",
+      "LAST_NAME",
+      "FIRST_NAME",
+      "PHONE",
+      "EMAIL",
+      "ADDRESSES.CITY",
+      "ADDRESSES.COUNTRY",
+    ),
     "LIST_ID" => "customers_list",
     "ORM_NAME" => "Mylab\Customer\Orm\CustomerTable"
   ),
