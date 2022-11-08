@@ -15,7 +15,7 @@ if (!function_exists('MylabCustomersModuleMenu')) {
     function MylabCustomersModuleMenu(&$adminMenu, &$moduleMenu)
     {
         $adminMenu['global_menu_services']['items'][] = [
-            'section' => 'ylab-meetings-pages',
+            'section' => 'mylab-customer-pages',
             'sort' => 110,
             'text' => Loc::getMessage('MYLAB_CUSTOMER_TITLE_PAGE'),
             'items_id' => 'nlmk-hidden-pages',
