@@ -2,6 +2,8 @@
 
 use Bitrix\Main\Loader;
 use Bitrix\Main\ORM;
+use Bitrix\Main\UI\PageNavigation;
+use Bitrix\Main\Grid\Options as GridOptions;
 
 
 /**
@@ -20,6 +22,8 @@ class CustomersDataComponent extends CBitrixComponent
     private string $ormClassName;
     /** @var array $columnFields Набор полей колонок грида */
     private array $columnFields;
+    /** @var ?PageNavigation $gridNav Параметры навигации грида */
+    private ?PageNavigation $gridNav = null;
 
     /**
      * Метод executeComponent
@@ -192,6 +196,8 @@ class CustomersDataComponent extends CBitrixComponent
         $this->arResult['GRID_ID'] = $this->getGridId();
         $this->arResult['GRID_BODY'] = $this->getGridBody();
         $this->arResult['GRID_HEAD'] = $this->getGridHead();
+        $this->arResult['GRID_NAV'] = $this->getGridNav();
+        $this->arResult['RECORD_COUNT'] = $this->getGridNav()->getRecordCount();
     }
 
     /**
@@ -254,26 +260,66 @@ class CustomersDataComponent extends CBitrixComponent
         if (empty($this->columnFields))
             return [];
 
-            $columnFields = [];
+        $columnFields = [];
 
-            foreach ($this->columnFields as $columnField) {
-                    if (strpos($columnField, '.') != null) {
-                        $pieces = explode(".", $columnField);
-                        $aliasName = $pieces[0] . '_' . $pieces[1] . '_ALIAS';
-                        $columnFields[$aliasName] = $columnField;
-                    } else {
-                        $columnFields[] = $columnField;
-                    }
+        foreach ($this->columnFields as $columnField) {
+            if (strpos($columnField, '.') != null) {
+                $pieces = explode(".", $columnField);
+                $aliasName = $pieces[0] . '_' . $pieces[1] . '_ALIAS';
+                $columnFields[$aliasName] = $columnField;
+            } else {
+                $columnFields[] = $columnField;
             }
+        }
 
-            $ormNam = $this->ormClassName;
+        $ormName = $this->ormClassName;
 
-            $elements = $ormNam::GetList([
-              'select' => $columnFields,
-            ]);
+        $elements = $ormName::GetList([
+          "count_total" => true,
+          "offset" => $this->getGridNav()->getOffset(),
+          "limit" => $this->getGridNav()->getLimit(),
+          'select' => $columnFields,
+        ]);
 
-            $result = $elements->fetchAll();
+        $this->getGridNav()->setRecordCount($elements->getCount());
+
+        $result = $elements->fetchAll();
 
         return $result;
+    }
+
+    /**
+     * Параметры навигации грида
+     *
+     * @return PageNavigation
+     */
+    private
+    function getGridNav(): PageNavigation
+    {
+        if ($this->gridNav === null) {
+            $this->gridNav = new PageNavigation($this->getGridId());
+
+            $gridOptions = $this->getObGridParams();
+            $navParams = $gridOptions->GetNavParams();
+
+            $this->gridNav
+              ->allowAllRecords(true)
+              ->setPageSize($navParams['nPageSize'])
+              ->initFromUri();
+        }
+
+        return $this->gridNav;
+    }
+
+    /**
+     * Возвращает единственный экземпляр настроек грида.
+     *
+     * @return GridOptions
+     */
+    private
+    function getObGridParams(): GridOptions
+    {
+        return $this->gridOption ?? $this->gridOption = new GridOptions($this->getGridId());
+
     }
 }
