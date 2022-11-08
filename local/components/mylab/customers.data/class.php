@@ -8,7 +8,7 @@ use Bitrix\Main\UI\Filter\Options as FilterOptions;
 
 
 /**
- * Класс для отображения списков
+ * Класс для отображения списков customer
  *
  * Class CustomersDataComponent
  *
@@ -21,6 +21,8 @@ class CustomersDataComponent extends CBitrixComponent
     private string $listId;
     /** @var string $ormClassName Имя класса ORM */
     private string $ormClassName;
+    /** @var string $repositoryName Имя класса репозитория */
+    private string $repositoryName;
     /** @var array $columnFields Набор полей колонок грида */
     private array $columnFields;
     /** @var ?PageNavigation $gridNav Параметры навигации грида */
@@ -53,6 +55,9 @@ class CustomersDataComponent extends CBitrixComponent
             if (is_string($this->arParams['ORM_NAME'])) {
                 $this->ormClassName = $this->arParams['ORM_NAME'];
             }
+            if (is_string($this->arParams['REPOSITORY_NAME'])) {
+                $this->repositoryName = $this->arParams['REPOSITORY_NAME'];
+            }
             if (is_array($this->arParams['COLUMN_FIELDS'])) {
                 $this->columnFields = $this->arParams['COLUMN_FIELDS'];
             }
@@ -60,19 +65,18 @@ class CustomersDataComponent extends CBitrixComponent
                 $this->filterFields = $this->arParams['FILTER_FIELDS'];
             }
 
-            if ($this->templateName == 'grid') {
-                if (!empty($this->columnFields) && !empty($this->ormClassName)) {
+            if (!empty($this->columnFields) && !empty($this->ormClassName)) {
+
+                if ($this->templateName == 'grid') {
 
                     $this->showByGrid();
 
-                }
-            } else if ($this->templateName == '' || $this->templateName == '.default') {
-
-                if (!empty($this->columnFields) && !empty($this->ormClassName)) {
+                } else if ($this->templateName == '' || $this->templateName == '.default') {
 
                     $this->arResult['GRID'] = $this->getGridData();
                 }
             }
+
         }
 
         $this->includeComponentTemplate();
@@ -301,23 +305,20 @@ class CustomersDataComponent extends CBitrixComponent
             }
         }
 
-        $ormName = $this->ormClassName;
+        $repository = new $this->repositoryName();
 
         $arCurSort = $this->getObGridParams()->getSorting(['sort' => ['ID' => 'DESC']])['sort'];
         $arFilter = $this->getGridFilterValues();
 
-        $elements = $ormName::GetList([
-          'filter' => $arFilter,
-          "count_total" => true,
-          "offset" => $this->getGridNav()->getOffset(),
-          "limit" => $this->getGridNav()->getLimit(),
-          'order' => $arCurSort,
-          'select' => $columnFields,
-        ]);
+        $result = $repository->fetchAll(
+          $arFilter,
+          $columnFields,
+          $arCurSort,
+          $this->getGridNav()->getOffset(),
+          $this->getGridNav()->getLimit()
+        );
 
-        $this->getGridNav()->setRecordCount($elements->getCount());
-
-        $result = $elements->fetchAll();
+        $this->getGridNav()->setRecordCount($repository->getCount($arFilter));
 
         return $result;
     }
@@ -436,7 +437,6 @@ class CustomersDataComponent extends CBitrixComponent
     function prepareFilter(array $arFilterData, &$baseFilter = []): array
     {
         $arFilter = [];
-
 
         foreach ($this->getGridFilterParams() as $gridFilterParam) {
 

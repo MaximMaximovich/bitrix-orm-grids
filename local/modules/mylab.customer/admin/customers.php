@@ -25,7 +25,8 @@ $APPLICATION->IncludeComponent(
       "ADDRESSES.COUNTRY",
     ),
     "LIST_ID" => "customers_list",
-    "ORM_NAME" => "Mylab\Customer\Orm\CustomerTable"
+    "ORM_NAME" => "Mylab\Customer\Orm\CustomerTable",
+    "REPOSITORY_NAME" => "Mylab\Customer\Repository\CustomerRepository"
   ),
   false
 );
